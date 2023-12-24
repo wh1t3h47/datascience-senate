@@ -11,4 +11,4 @@ Projeto de Data Science
 8. Voltar ao passo 4 com subgrupo;
 9. Quando bater a condição de parada, plotar o gráfico de sobreajuste;
 10. Escolher o melhor número de nós para ávore de decisão;
-Objetivo: Decidir quais são os atributos mais relevantes para dizer quais investidores prevem o mercado (é partido? é o que?)
+- Objetivo: Decidir quais são os atributos mais relevantes para dizer quais investidores prevem o mercado (é partido? é o que?)
