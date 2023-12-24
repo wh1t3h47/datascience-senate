@@ -2,6 +2,9 @@ from json import load, dump
 from os.path import join
 from os import listdir
 from typing import List, Union
+from datetime import datetime
+
+from ..services.stocks_api_service import stocks_api_service
 
 from ..models.TransactionModel import TransactionEncoder, TransactionModel
 
@@ -19,7 +22,7 @@ def normalize_data(data: List[List[TransactionModel]]) -> List[TransactionModel]
     """
     return [transaction for senator_transactions in data for transaction in senator_transactions if transaction.asset_type == "Stock"]
 
-def get_transactions(path: str) -> Union[List[List[TransactionModel]], None]:
+def get_transactions() -> Union[List[List[TransactionModel]], None]:
     """
     Retorna uma lista de listas de objetos TransactionModel a partir de um caminho de arquivo.
 
@@ -29,25 +32,28 @@ def get_transactions(path: str) -> Union[List[List[TransactionModel]], None]:
     Returns:
         Lista de listas de objetos TransactionModel.
     """
-    if not path.endswith('.json'):
-        return None
-    
-    with open(join('.', 'data', path), "r") as f:
-        data = load(f)
+    data = {}
+    path = join(".", "aggregate", 'all_transactions_for_senators.json')
+    with open(path, 'r') as _data:
+        data = load(_data)
 
     transactions = [
         [
             TransactionModel(
-                owner=(
+                name=(
                     senator.get("first_name", "") + " " + senator.get("last_name", "")
-                    if t.get("owner", "") == "Self"
-                    else t.get("owner", "")
+                ),
+                owner=(
+                    t.get('owner', '')
                 ),
                 asset_description=t.get("asset_description", ""),
                 asset_type=t.get("asset_type", ""),
                 type=t.get("type", ""),
                 amount=t.get("amount", 0.0),
-                comment=t.get("comment", "")
+                comment=t.get("comment", ""),
+                created_at=datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(),
+                # @todo handle tick fail (when tick doesn't exist)
+                price=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), ticker=t.get("ticker", "")),
             )
             for t in senator.get("transactions", [])
         ]
@@ -56,14 +62,9 @@ def get_transactions(path: str) -> Union[List[List[TransactionModel]], None]:
     return transactions if transactions else None
 
 def main():
-    path = join(".", "data")
-
-    transactions = [get_transactions(f) for f in listdir(path) if f.endswith('.json')]
-    print('1', transactions)
+    transactions = get_transactions()
     transactions = normalize_data([transaction for sublist in transactions if sublist for transaction in sublist])
-    print('2', transactions)
     transactions_json = {"transactions": transactions}
-    print('3', transactions_json)
 
     with open("transactions.json", "w") as f:
         dump(transactions_json, f, cls=TransactionEncoder)
