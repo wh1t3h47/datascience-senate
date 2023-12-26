@@ -8,8 +8,6 @@ from ..services.stocks_api_service import stocks_api_service
 
 from ..models.TransactionModel import TransactionEncoder, TransactionModel
 
-
-
 def normalize_data(data: List[List[TransactionModel]]) -> List[TransactionModel]:
     """
     Remove transações com type stock de zero.
@@ -20,7 +18,7 @@ def normalize_data(data: List[List[TransactionModel]]) -> List[TransactionModel]
     Returns:
         Lista de objetos TransactionModel normalizados.
     """
-    return [transaction for senator_transactions in data for transaction in senator_transactions if transaction.asset_type == "Stock"]
+    return [transaction for senator_transactions in data if senator_transactions for transaction in senator_transactions if transaction.asset_type == "Stock"]
 
 def get_transactions() -> Union[List[List[TransactionModel]], None]:
     """
@@ -53,17 +51,22 @@ def get_transactions() -> Union[List[List[TransactionModel]], None]:
                 comment=t.get("comment", ""),
                 created_at=datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(),
                 # @todo handle tick fail (when tick doesn't exist)
-                price=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), ticker=t.get("ticker", "")),
+                price1d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1d", ticker=t.get("ticker", "")),
+                price7d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="7d", ticker=t.get("ticker", "")),
+                price15d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="15d", ticker=t.get("ticker", "")),
+                price1m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1m", ticker=t.get("ticker", "")),
+                price6m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="6m", ticker=t.get("ticker", "")),
+                price1y=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1y", ticker=t.get("ticker", "")),
             )
+            for senator in data or []
             for t in senator.get("transactions", [])
         ]
-        for senator in data or []
     ]
     return transactions if transactions else None
 
 def main():
     transactions = get_transactions()
-    transactions = normalize_data([transaction for sublist in transactions if sublist for transaction in sublist])
+    transactions = normalize_data(transactions)
     transactions_json = {"transactions": transactions}
 
     with open("transactions.json", "w") as f:
