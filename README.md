@@ -8,9 +8,11 @@ Python 3.11 (ou mais recente)
 2. Rode o algoritmo de machine learning:
   `python3  -m src.services.machine_learning_service`
 
-[Minerando dados de ações de senadores, pegando o preço](https://github.com/wh1t3h47/datascience-senate/blob/master/media/data_mining.png?raw=true)
+## Minerando dados de ações de senadores, pegando o preço
+<img src="https://github.com/wh1t3h47/datascience-senate/blob/master/media/data_mining.png?raw=true" alt="" />
 
-[Demonstra precisão do sklearn de 100% usando validação cruzada](https://github.com/wh1t3h47/datascience-senate/blob/master/media/precision.png?raw=true)
+## Demonstra precisão do sklearn de 100% usando validação cruzada
+<img src="https://github.com/wh1t3h47/datascience-senate/blob/master/media/precision.png?raw=true" alt="" />
 
 Projeto de Data Science
 1. Quem são os senadores que mais acertam investimentos: Tem dois tipos de acerto, verdadeiro positivo (comprou ação e valorizou) e verdadeiro negativo (vendeu a ação e baixou);
