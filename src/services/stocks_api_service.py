@@ -78,7 +78,7 @@ def stocks_api_service(symbol: str, date: date, period: PeriodType, ticker: str,
         # print(period)
         # Calculate the average of daily prices or the average price
         num_days = period_mapping[period] if period in period_mapping else int(search(r'\d+', period).group())
-        price_type = "Average For Last" if type == "day" else "Average Since Bought Until"
+        price_type = "Average For" if type == "day" else "Average Since Bought Until"
         
         if type == "day":
             # Calculate the average for the specified day
@@ -92,10 +92,11 @@ def stocks_api_service(symbol: str, date: date, period: PeriodType, ticker: str,
 
         average_price = prices.mean()
 
-        plural_s = "" if num_days == 1 else "s"
+        plural = "" if num_days == 1 else "s"
+        plural_s = plural if type == "avg" else ""
         ordinal_suffix = get_ordinal_suffix(num_days)
 
-        print(f"📈 Stock ➡️ ({symbol})")
+        print(f"📈 Stock --> ({symbol})")
         print(f"{price_type} {num_days}{ordinal_suffix} day{plural_s}")
         print(f"💰${average_price:.2f}\n")
 
