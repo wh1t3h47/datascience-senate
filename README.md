@@ -1,5 +1,13 @@
 # Senator Investment Data Science Project
 
+## Como Rodar?
+Python 3.11 (ou mais recente)
+
+1. Construa seus dados (opcional):
+  `python3 -m src.normalize_data.index`
+2. Rode o algoritmo de machine learning:
+  `python3  -m src.services.machine_learning_service`
+
 Projeto de Data Science
 1. Quem são os senadores que mais acertam investimentos: Tem dois tipos de acerto, verdadeiro positivo (comprou ação e valorizou) e verdadeiro negativo (vendeu a ação e baixou);
 2. Normalizar os dados;
