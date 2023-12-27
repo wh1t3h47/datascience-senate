@@ -92,12 +92,10 @@ def stocks_api_service(symbol: str, date: date, period: PeriodType, ticker: str,
 
         average_price = prices.mean()
 
-        plural = "" if num_days == 1 else "s"
-        plural_s = plural if type == "avg" else ""
         ordinal_suffix = get_ordinal_suffix(num_days)
 
         print(f"📈 Stock --> ({symbol})")
-        print(f"{price_type} {num_days}{ordinal_suffix} day{plural_s}")
+        print(f"{price_type} {num_days}{ordinal_suffix} day")
         print(f"💰${average_price:.2f}\n")
 
         return average_price
