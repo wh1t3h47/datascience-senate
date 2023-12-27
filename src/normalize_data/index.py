@@ -22,10 +22,7 @@ def normalize_data(data: List[List[TransactionModel]]) -> List[TransactionModel]
 
 def get_transactions() -> Union[List[List[TransactionModel]], None]:
     """
-    Retorna uma lista de listas de objetos TransactionModel a partir de um caminho de arquivo.
-
-    Args:
-        path: Caminho do arquivo JSON.
+    Retorna uma lista de listas de objetos TransactionModel
 
     Returns:
         Lista de listas de objetos TransactionModel.
@@ -51,12 +48,19 @@ def get_transactions() -> Union[List[List[TransactionModel]], None]:
                 comment=t.get("comment", ""),
                 created_at=datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(),
                 # @todo handle tick fail (when tick doesn't exist)
-                price1d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1d", ticker=t.get("ticker", "")),
-                price7d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="7d", ticker=t.get("ticker", "")),
-                price15d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="15d", ticker=t.get("ticker", "")),
-                price1m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1m", ticker=t.get("ticker", "")),
-                price6m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="6m", ticker=t.get("ticker", "")),
-                price1y=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1y", ticker=t.get("ticker", "")),
+                price_avarage_in_1d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1d", ticker=t.get("ticker", ""), type="avg"),
+                price_avarage_in_7d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="7d", ticker=t.get("ticker", ""), type="avg"),
+                price_avarage_in_15d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="15d", ticker=t.get("ticker", ""), type="avg"),
+                price_avarage_in_1m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1m", ticker=t.get("ticker", ""), type="avg"),
+                price_avarage_in_6m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="6m", ticker=t.get("ticker", ""), type="avg"),
+                price_avarage_in_1y=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1y", ticker=t.get("ticker", ""), type="avg"),
+                price_daily_after_1d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1d", ticker=t.get("ticker", ""), type="day"),
+                price_daily_after_7d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="7d", ticker=t.get("ticker", ""), type="day"),
+                price_daily_after_15d=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="15d", ticker=t.get("ticker", ""), type="day"),
+                price_daily_after_1m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1m", ticker=t.get("ticker", ""), type="day"),
+                price_daily_after_6m=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="6m", ticker=t.get("ticker", ""), type="day"),
+                price_daily_after_1y=stocks_api_service(t.get("asset_description", ""), datetime.strptime(senator.get("date_recieved", ""), '%m/%d/%Y').date(), period="1y", ticker=t.get("ticker", ""), type="day"),
+                
             )
             for senator in data or []
             for t in senator.get("transactions", [])
@@ -69,6 +73,7 @@ def main():
     transactions = normalize_data(transactions)
     transactions_json = {"transactions": transactions}
 
+    print("Writing Transactions...")
     with open("transactions.json", "w") as f:
         dump(transactions_json, f, cls=TransactionEncoder)
 

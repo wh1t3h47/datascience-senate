@@ -1,19 +1,27 @@
-from typing import Union, Literal
-from alpha_vantage.timeseries import TimeSeries
+from typing import Literal
 from dotenv import load_dotenv
-from os import getenv
 from pandas import DataFrame
 from yfinance import Ticker
 from datetime import date, timedelta
-from re import compile
+from re import compile, search
 
-from ..models.TransactionModel import ErrorEnum
+from ..models.ErrorEnumModel import ErrorEnumModel
 
 load_dotenv()
 
 is_url = compile("\/q\?s=(.*?)\"")
 
-PeriodType = Union[Literal['1d'], Literal['7d'], Literal['15d'], Literal['1m'], Literal['6m'], Literal['1y']]
+PeriodType = Literal['1d', '7d', '15d', '1m', '6m', '1y']
+DateType = Literal["start", "end"]
+DailyAvarage = Literal["day", "avg"]
+period_mapping: dict[PeriodType, int] = {
+    "1d": 1,
+    "7d": 7,
+    "15d": 15,
+    "1m": 30,
+    "6m": 180,
+    "1y": 365,
+}
 
 def extract_stock_symbol(url):
     match = is_url.search(url)
@@ -21,6 +29,13 @@ def extract_stock_symbol(url):
         return match.group(1)
     else:
         return None
+    
+def get_ordinal_suffix(number: int) -> str:
+    if 10 <= number % 100 <= 20:
+        suffix = "th"
+    else:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(number % 10, "th")
+    return suffix
 
 def get_symbol(keyword):
     """Retrieves the first matching stock symbol from Yahoo Finance."""
@@ -28,55 +43,63 @@ def get_symbol(keyword):
     ticker = Ticker(keyword)
     return ticker.info.get("symbol")
 
-def calculate_end_date(date: date, period: PeriodType) -> date:
-    period_mapping: dict[PeriodType, int] = {
-        "1d": 1,
-        "7d": 7,
-        "15d": 15,
-        "1m": 30,
-        "6m": 180,
-        "1y": 365,
-    }
-
+def calculate_date(date: date, period: PeriodType, date_type: DateType, type: DailyAvarage) -> date:
     days = period_mapping[period]
-    end_date = date + timedelta(days=days)
-    return end_date
+    if date_type == "start":
+        return date - timedelta(days=days - 1) if type == "day" else date - timedelta(days=days)
+    else:  # date_type == "end"
+        return date + timedelta(days=days)
 
-def stocks_api_service(symbol, date: date, period: PeriodType, ticker=""):
-    """Fetches the average price of a stock on a specified date."""
+def stocks_api_service(symbol: str, date: date, period: PeriodType, ticker: str, type: DailyAvarage):
+    """Fetches the daily or average price of a stock on a specified date."""
     if ticker and ticker != '--':
         symbol = extract_stock_symbol(ticker)
     else:
         return None
-        # @todo else search tick
-    print('--->', symbol)
 
     _ticker = Ticker(symbol)
-    
-    # Change this line to dynamically calculate the end date based on the period
-    end_date = calculate_end_date(date, period)
-    
+
+    start_date = calculate_date(date, period, "start", type)
+    end_date = calculate_date(date, period, "end", type)
+
     hist: DataFrame = None
     hist_set = False
     try:
-        hist = _ticker.history(start=date, end=end_date, raise_errors=True)
+        hist = _ticker.history(start=start_date, end=end_date, raise_errors=True)
         hist_set = True
     except Exception as err:
         msg = str(err)
         if "symbol may be delisted" in msg:
-            print('DELISTED')
-            return ErrorEnum['SYMBOL_DELISTED']
-        # else
+            return ErrorEnumModel['SYMBOL_DELISTED']
         if "Data doesn't exist for" in msg:
-            print("NOT FOUND")
-            return ErrorEnum["DATA_NOT_FOUND"]
-    
-    # Verifique se há dados disponíveis para a data especificada
+            return ErrorEnumModel["DATA_NOT_FOUND"]
+
     if hist_set and not hist.empty:
-        # Calcule a média dos preços de abertura
-        average_price = hist["Open"].mean()
-        print("Average Open Price ->", average_price, "\n")
+        # print(period)
+        # Calculate the average of daily prices or the average price
+        num_days = period_mapping[period] if period in period_mapping else int(search(r'\d+', period).group())
+        price_type = "Average For Last" if type == "day" else "Average Since Bought Until"
+        
+        if type == "day":
+            # Calculate the average for the specified day
+            prices = hist["Open"].tail(num_days)
+        else:
+            # Calculate the average since bought until the specified days
+            if num_days <= len(hist):
+                prices = hist["Open"].iloc[:num_days]
+            else:
+                prices = hist["Open"]
+
+        average_price = prices.mean()
+
+        plural_s = "" if num_days == 1 else "s"
+        ordinal_suffix = get_ordinal_suffix(num_days)
+
+        print(f"📈 Stock ➡️ ({symbol})")
+        print(f"{price_type} {num_days}{ordinal_suffix} day{plural_s}")
+        print(f"💰${average_price:.2f}\n")
+
         return average_price
     else:
         print(f"DATA NOT FOUND")
-        return ErrorEnum["DATA_NOT_FOUND"]
+        return ErrorEnumModel["DATA_NOT_FOUND"]

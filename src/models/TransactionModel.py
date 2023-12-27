@@ -1,25 +1,6 @@
-from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, datetime
 from json import JSONEncoder
-from typing import TYPE_CHECKING, TypedDict, Union
-
-
-# To avoid creating a class at runtime, for type-hinting alone.
-if TYPE_CHECKING:
-    class ErrorEnumType(TypedDict):
-        SYMBOL_DELISTED: int
-        DATA_DOES_NOT_EXIST: int
-        DATA_NOT_FOUND: int
-
-
-ErrorEnum: ErrorEnumType = {
-    'SYMBOL_DELISTED': -1,
-    # if the API return error
-    "DATA_DOES_NOT_EXIST": -2,
-    # If the API doesn't return error or data
-    "DATA_NOT_FOUND": -3,
-}
 
 @dataclass
 class TransactionModel():
@@ -31,12 +12,27 @@ class TransactionModel():
     amount: float
     comment: str
     created_at: date
-    price1d: int
-    price7d: int
-    price15d: int
-    price1m: int
-    price6m: int
-    price1y: int
+    # Preço média do período de aplicação até o final (suavizada)
+    # Exemplo 1y -> Preço médio de todos os 365 dias depois da
+    # aplicação
+    price_avarage_in_1d: int
+    price_avarage_in_7d: int
+    price_avarage_in_15d: int
+    price_avarage_in_1m: int
+    price_avarage_in_6m: int
+    price_avarage_in_1y: int
+    # Preço duma média diária a partir do prazo inicial
+    # Exemplo: 7d -> Preço médio do dia 7 dias depois da data
+    # de aplicação
+    # Por enquanto independe do prazo de retirada
+    # @todo avaliar uma estratégia de parear compras e vendas
+    # e ver se melhora o modelo
+    price_daily_after_1d: int
+    price_daily_after_7d: int
+    price_daily_after_15d: int
+    price_daily_after_1m: int
+    price_daily_after_6m: int
+    price_daily_after_1y: int
 
 class TransactionEncoder(JSONEncoder):
     def default(self, obj):
