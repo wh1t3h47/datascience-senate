@@ -3,6 +3,8 @@
 ## Como Rodar?
 Python 3.11 (ou mais recente)
 
+1. Instale pacotes:
+  `pip3 install -r requirements.txt`
 1. Construa seus dados (opcional):
   `python3 -m src.normalize_data.index`
 2. Rode o algoritmo de machine learning:
