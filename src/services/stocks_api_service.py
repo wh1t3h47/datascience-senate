@@ -96,7 +96,7 @@ def stocks_api_service(symbol: str, date: date, period: PeriodType, ticker: str,
 
         print(f"📈 Stock --> ({symbol})")
         print(f"{price_type} {num_days}{ordinal_suffix} day")
-        print(f"💰${average_price:.2f}\n")
+        print(f"💰 ${average_price:.2f}\n")
 
         return average_price
     else:
