@@ -5,7 +5,7 @@ from yfinance import Ticker
 from datetime import date, timedelta
 from re import compile, search
 
-from ..models.ErrorEnumModel import ErrorEnumModel
+from src.models.ErrorEnumModel import ErrorEnumModel
 
 load_dotenv()
 

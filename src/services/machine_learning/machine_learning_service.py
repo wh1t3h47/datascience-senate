@@ -1,17 +1,15 @@
 from typing import List, Dict
-from dataclasses import dataclass
 from matplotlib.pyplot import plot, figure, xlabel, ylabel, title, legend, show
 from pandas import json_normalize, read_json, DataFrame, Series, to_datetime
-from joblib import parallel_backend
 from os.path import abspath
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, classification_report, precision_score, f1_score, roc_curve, auc
-from sklearn.model_selection import RandomizedSearchCV, StratifiedKFold, cross_val_score, train_test_split
+from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.naive_bayes import GaussianNB
 
 from src.models.TransactionModel import TransactionModel
+from src.services.machine_learning.model_training_service import ModelTrainerService
 
 def preprocess_data(df: DataFrame) -> DataFrame:
     transactions_list: List[TransactionModel] = df['transactions'].tolist()
@@ -48,62 +46,6 @@ def feature_engineering(df: DataFrame) -> DataFrame:
 
     return df
 
-
-@dataclass
-class ModelTrainer:
-    model: RandomForestClassifier
-    name: str
-    param_dist: Dict[str, List]
-
-    def train(self, X_train: DataFrame, y_train: Series, n_iter: int = 1) -> None:
-        with parallel_backend('loky', n_jobs=10):
-            random_search = RandomizedSearchCV(
-                self.model,
-                param_distributions=self.param_dist,
-                n_iter=n_iter,
-                cv=StratifiedKFold(n_splits=5, shuffle=True, random_state=42),
-                scoring='accuracy',
-                random_state=42
-            )
-            random_search.fit(X_train, y_train)
-
-            best_params = random_search.best_params_
-            self.model.set_params(**best_params)
-            print(f"Best parameters for {self.name} after {n_iter} iterations: {best_params}")
-
-        self.model.fit(X_train, y_train)
-
-    def evaluate(self, X_test: DataFrame, y_test: Series) -> None:
-        if hasattr(self.model, 'predict_proba'):
-            y_pred_proba = self.model.predict_proba(X_test)[:, 1]
-            y_pred = (y_pred_proba > 0.4).astype(int)
-        else:
-            y_pred = self.model.predict(X_test)
-
-        accuracy = accuracy_score(y_test, y_pred)
-        report = classification_report(y_test, y_pred, zero_division=1)
-        precision = precision_score(y_test, y_pred, zero_division=1, average='weighted')
-        f1 = f1_score(y_test, y_pred, zero_division=1, average='weighted')
-
-        cv = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
-        cv_scores = cross_val_score(self.model, X_test, y_test, cv=cv)
-        avg_cv_accuracy = cv_scores.mean()
-
-        print(f"\nModel: {self.name}")
-        print(f"  - Accuracy: {accuracy}")
-        print(f"  - Precision: {precision}")
-        print(f"  - F1 Score: {f1}")
-        print(f"  - Classification Report:\n{report}")
-        print(f"  - Cross-Validation Accuracy: {round(avg_cv_accuracy * 100):.0f}%")
-
-        # Plot ROC curve
-        if hasattr(self.model, 'predict_proba'):
-            fpr, tpr, _ = roc_curve(y_test, y_pred_proba)
-            roc_auc = auc(fpr, tpr)
-
-            plot(fpr, tpr, label=f'{self.name} (AUC = {roc_auc:.2f})')
-
-
 def machine_learning_service(file_path: str) -> None:
     abs_path = abspath(file_path)
     df_denormalized = read_json(abs_path)
@@ -133,7 +75,7 @@ def machine_learning_service(file_path: str) -> None:
         'p': [1, 2]
     }
 
-    knn_model = ModelTrainer(KNeighborsClassifier(), "KNN", param_dist_knn)
+    knn_model = ModelTrainerService(KNeighborsClassifier(), "KNN", param_dist_knn)
     knn_model.train(X_train, y_train, n_iter=20)
 
     param_dist_rf: Dict[str, List] = {
@@ -152,9 +94,9 @@ def machine_learning_service(file_path: str) -> None:
 
     param_dist_nb: Dict[str, List] = {}  # GaussianNB não tem muitos hiperparâmetros
 
-    rf_model = ModelTrainer(RandomForestClassifier(random_state=42), "Random Forest", param_dist_rf)
-    dt_model = ModelTrainer(DecisionTreeClassifier(random_state=42), "Decision Tree", param_dist_dt)
-    nb_model = ModelTrainer(GaussianNB(), "GaussianNB", param_dist_nb)
+    rf_model = ModelTrainerService(RandomForestClassifier(random_state=42), "Random Forest", param_dist_rf)
+    dt_model = ModelTrainerService(DecisionTreeClassifier(random_state=42), "Decision Tree", param_dist_dt)
+    nb_model = ModelTrainerService(GaussianNB(), "GaussianNB", param_dist_nb)
 
     rf_model.train(X_train, y_train)
     dt_model.train(X_train, y_train)
@@ -174,11 +116,3 @@ def machine_learning_service(file_path: str) -> None:
     legend()
     show()
 
-
-def main() -> None:
-    file_path: str = "transactions.json"
-    machine_learning_service(file_path)
-
-
-if __name__ == "__main__":
-    main()

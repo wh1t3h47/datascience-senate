@@ -6,9 +6,9 @@ Python 3.11 (ou mais recente)
 1. Instale pacotes:
   `pip3 install -r requirements.txt`
 1. Construa seus dados (opcional):
-  `python3 -m src.normalize_data.index`
+  `python3 -m scripts.mine_data`
 2. Rode o algoritmo de machine learning:
-  `python3  -m src.services.machine_learning_service`
+  `python3  -m scripts.train_model`
 
 ## Minerando dados de ações de senadores, pegando o preço
 <img src="https://github.com/wh1t3h47/datascience-senate/blob/master/media/data_mining.png?raw=true" alt="" />
